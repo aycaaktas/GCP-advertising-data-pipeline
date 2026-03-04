@@ -1,66 +1,94 @@
+# 📊 Ad Spend Data Pipeline (GCP)
 
-# Ad Spend Data Pipeline (GCP)
+![GCP](https://img.shields.io/badge/Platform-Google%20Cloud-blue)
+![Python](https://img.shields.io/badge/Python-3.x-yellow)
+![BigQuery](https://img.shields.io/badge/Data%20Warehouse-BigQuery-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![ETL](https://img.shields.io/badge/Pipeline-ETL-orange)
 
-A production-style **data engineering pipeline built on Google Cloud Platform** for ingesting advertising data, performing currency normalization, and maintaining clean analytical datasets in BigQuery.
+A **production-style data engineering pipeline built on Google Cloud Platform** for ingesting advertising data, performing currency normalization, and maintaining clean analytical datasets in **BigQuery**.
 
-This project demonstrates a **cloud-native ETL pipeline** that processes Parquet files from Google Cloud Storage, converts advertising costs to USD using exchange rates, and loads the processed data into BigQuery using a scalable architecture.
+This project demonstrates a **cloud-native ETL pipeline** that processes **Parquet files from Google Cloud Storage**, converts advertising costs to **USD using exchange rates**, and loads the processed data into **BigQuery using a scalable architecture**.
 
 ---
 
-# Architecture
+# 🏗 Architecture
 
-The pipeline is composed of two main components:
+The pipeline consists of **two main components**:
 
 1. **Exchange Rate Pipeline**
 2. **Advertising Data Ingestion Pipeline**
 
-```
+## Data Ingestion Pipeline
 
-GCS (Parquet files)
-        │
-        ▼
-Cloud Function (Scheduler Trigger)
-        │
-        ▼
-Data Processing (Python)
-        │
-        ▼
-BigQuery Staging Table
-        │
-        ▼
-MERGE into Production Table
-        │
-        ▼
-Analytics Ready Dataset
+    ┌────────────────────────┐
+    │  Parquet Files (GCS)   │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ Cloud Scheduler        │
+    │ (Daily Trigger)        │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ Cloud Function         │
+    │ Python Processing      │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ BigQuery Staging Table │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ BigQuery MERGE         │
+    │ Production Table       │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ Analytics Ready Data   │
+    └────────────────────────┘
 
-Exchange Rate API
-        │
-        ▼
-Cloud Function
-        │
-        ▼
-BigQuery Exchange Rate Table
+## Exchange Rate Pipeline
 
+    ┌────────────────────────┐
+    │  Exchange Rate API     │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ Cloud Function         │
+    │ Fetch + Transform      │
+    └─────────────┬──────────┘
+                  │
+                  ▼
+    ┌────────────────────────┐
+    │ BigQuery Table         │
+    │ Exchange Rates         │
+    └────────────────────────┘
 
 ---
 
-# Features
+# ✨ Features
 
-- Automated **daily data ingestion**
-- **Parquet file processing**
-- **Currency normalization to USD**
-- **Exchange rate API integration**
-- **File deduplication using file hashes**
-- **File version tracking**
-- **Automatic deletion of missing files**
-- **MERGE-based upserts in BigQuery**
-- **Serverless architecture**
-- **Cloud Scheduler automation**
+✔ Automated **daily data ingestion**  
+✔ **Parquet file processing**  
+✔ **Currency normalization to USD**  
+✔ **Exchange rate API integration**  
+✔ **File deduplication using file hashes**  
+✔ **File version tracking**  
+✔ **Automatic deletion of missing files**  
+✔ **MERGE-based upserts in BigQuery**  
+✔ **Serverless architecture**  
+✔ **Cloud Scheduler automation**
 
 ---
 
-# Project Structure
-
+# 📁 Project Structure
 
 project-root
 │
@@ -77,22 +105,22 @@ project-root
 │
 ├── data
 │   └── sample parquet files
+│
+└── README.md
 
 
----
+# 🔄 Component 1: Exchange Rate Pipeline
 
-# Component 1: Exchange Rate Pipeline
+This component retrieves **currency exchange rates from an external API** and stores them in **BigQuery**.
 
-This component retrieves currency exchange rates from an external API and stores them in BigQuery.
-
-Responsibilities:
+### Responsibilities
 
 - Fetch exchange rates from API
 - Prepare structured data
-- Store exchange rates historically in BigQuery
-- Run daily using Cloud Scheduler
+- Store exchange rates historically
+- Run daily using **Cloud Scheduler**
 
-Example schema:
+### Example Schema
 
 | Column | Type |
 |------|------|
@@ -100,17 +128,17 @@ Example schema:
 | currency_code | STRING |
 | rate | FLOAT |
 
-Exchange rates are used to convert advertising costs to USD during data processing.
+Exchange rates are used to **convert advertising costs to USD** during processing.
 
 ---
 
-# Component 2: Advertising Data Pipeline
+# 📥 Component 2: Advertising Data Pipeline
 
-This pipeline processes advertising spend data stored in Google Cloud Storage.
+This pipeline processes **advertising spend data stored in Google Cloud Storage**.
 
 Input files are delivered as **Parquet files** containing advertising performance metrics.
 
-Example input schema:
+### Example Input Schema
 
 | Column | Description |
 |------|-------------|
@@ -122,18 +150,21 @@ Example input schema:
 
 ---
 
-# Processing Logic
+# ⚙ Processing Logic
 
 Each Parquet file is processed according to the following rules.
 
+---
+
 ## Deduplication
 
-If multiple rows exist for the same:
+If multiple rows exist for the same key:
+
 
 dt + network + currency + platform
 
 
-only the row with the **highest cost** is retained.
+Only the row with the **highest cost** is retained.
 
 ---
 
@@ -145,7 +176,7 @@ The system retrieves the **latest exchange rate** and computes:
 cost_usd = cost * exchange_rate
 
 
-Exchange rates are cached during processing to reduce repeated queries.
+Exchange rates are **cached during processing** to reduce repeated queries.
 
 ---
 
@@ -161,36 +192,36 @@ file_version_id
 
 This ensures:
 
-- files are not processed twice
-- renamed files are handled correctly
-- deleted files remove their data from BigQuery
+- Files are not processed twice
+- Renamed files are handled correctly
+- Deleted files remove their data from BigQuery
 
 ---
 
-# Data Loading Strategy
+# 🗄 Data Loading Strategy
 
 The pipeline follows a **staging → merge pattern**.
 
-1. Load processed data into a **staging table**
-2. Perform a **MERGE operation** into the production table
+1️⃣ Load processed data into a **staging table**  
+2️⃣ Perform a **MERGE operation** into the production table  
 
-Rules:
+### Rules
 
-- If record exists and new cost is higher → update
-- If record does not exist → insert
-- Maintain only one record per key
+- If record exists and new cost is higher → **update**
+- If record does not exist → **insert**
+- Maintain only **one record per key**
 
-Key:
+### Primary Key
 
 
 dt + network + currency + platform
 
 
-This ensures consistent and idempotent updates to the dataset.
+This ensures **idempotent and consistent updates**.
 
 ---
 
-# Target Table Schema
+# 📊 Target Table Schema
 
 | Column | Type |
 |------|------|
@@ -206,119 +237,98 @@ This ensures consistent and idempotent updates to the dataset.
 
 ---
 
-# Handling Edge Cases
+# ⚠ Handling Edge Cases
 
 The pipeline handles several real-world scenarios.
 
-## Late arriving files
+### Late Arriving Files
 
 If today's file does not arrive, the system logs a warning but continues execution.
 
-## File re-upload with same name
+### File Re-upload with Same Name
 
 Files are identified using **hash values** to avoid duplicate processing.
 
-## File renamed
+### File Renamed
 
 If the same content appears with a different name:
 
-- old records are removed
-- new records are inserted
+- Old records are removed
+- New records are inserted
 
-## Missing files
+### Missing Files
 
 If a previously processed file disappears from storage:
 
-- associated records are deleted
-- file status is marked as deleted
+- Associated records are deleted
+- File status is marked as **deleted**
 
 ---
 
-# Local Testing
+# 🧪 Local Testing
 
 To simulate processing locally:
 
-
+```bash
 python check.py
 
+This script:
 
-This script processes Parquet files locally and simulates the BigQuery merge logic.
+Processes Parquet files locally
 
----
+Simulates BigQuery merge logic
 
-# Deployment
+☁ Deployment
 
-The pipeline is designed to run using **Google Cloud Functions**.
+The pipeline runs using Google Cloud Functions.
 
-Trigger:
-
-
+Trigger
 Google Cloud Scheduler
-
-
-Execution frequency:
-
-
+Frequency
 Daily
+Deployment Steps
 
+Upload code to the cloud environment
 
-Deployment steps:
+Deploy the Cloud Function
 
-1. Upload code to the cloud environment
-2. Deploy the Cloud Function
-3. Configure Cloud Scheduler trigger
-4. Grant BigQuery and GCS permissions
+Configure the Cloud Scheduler trigger
 
----
+Grant BigQuery and GCS permissions
 
-# Requirements
-
-
+📦 Requirements
 google-cloud-bigquery
 google-cloud-storage
 requests
 pandas
 pyarrow
 
+Install dependencies:
 
----
+pip install -r requirements.txt
 
-# Example Workflow
+🔁 Example Workflow
 
-1. Ad network uploads Parquet file to Google Cloud Storage
-2. Cloud Scheduler triggers the Cloud Function
-3. Function scans the storage bucket
-4. New files are detected
-5. Data is processed
-6. Costs are converted to USD
-7. Data is loaded into staging table
-8. MERGE operation updates the main BigQuery table
+1️⃣ Ad network uploads Parquet file to Google Cloud Storage
+2️⃣ Cloud Scheduler triggers the Cloud Function
+3️⃣ Function scans the storage bucket
+4️⃣ New files are detected
+5️⃣ Data is processed
+6️⃣ Costs are converted to USD
+7️⃣ Data is loaded into staging table
+8️⃣ MERGE operation updates the production BigQuery table
 
----
+🛠 Technologies Used
+Python	Data processing
+Google Cloud Storage	Data lake
+BigQuery	Data warehouse
+Cloud Functions	Serverless compute
+Cloud Scheduler	Workflow automation
+Pandas	Data transformation
+Parquet	Efficient columnar storage
+REST APIs	Exchange rate data
 
-# Technologies Used
 
-- Python
-- Google Cloud Storage
-- Google BigQuery
-- Google Cloud Functions
-- Cloud Scheduler
-- Parquet
-- Pandas
-- REST APIs
-
----
-
-# Author
-
-Ayça Aktaş  
-
-Computer Science & Engineering  
-Sabancı University  
-
----
-
-# License
+📜 License
 
 MIT License
-
